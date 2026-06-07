@@ -1,0 +1,45 @@
+name: pr-check
+
+on:
+  pull_request:
+    branches: [master, main]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  validate:
+    name: pr-validation-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check PR title format
+        run: |
+          TITLE="${{ github.event.pull_request.title }}"
+          PATTERN="^(feat|fix|refactor|docs|test|chore)(\\(.*\\))?: .+"
+          if [[ ! "$TITLE" =~ $PATTERN ]]; then
+            echo "❌ PR 标题不符合规范: '$TITLE'"
+            echo "期望格式: <type>: <描述>"
+            echo "类型: feat / fix / refactor / docs / test / chore"
+            exit 1
+          fi
+          echo "✅ PR 标题格式正确: $TITLE"
+
+      - name: Check PR description
+        run: |
+          BODY="${{ github.event.pull_request.body }}"
+          if [ -z "$BODY" ]; then
+            echo "⚠️ PR 描述为空，建议添加描述说明改动内容"
+          else
+            echo "✅ PR 描述已填写"
+          fi
+
+      - name: Check branch naming
+        run: |
+          BRANCH="${{ github.head_ref }}"
+          PATTERN="^(feat|fix|refactor|docs|test|chore)/"
+          if [[ ! "$BRANCH" =~ $PATTERN ]]; then
+            echo "⚠️ 分支名不符合规范: '$BRANCH'"
+            echo "期望格式: <type>/<description>"
+          else
+            echo "✅ 分支名格式正确: $BRANCH"
+          fi

@@ -1,10 +1,10 @@
 """
 Pancake Embed — 零 import 插件
-将框架装饰器注册到 muffin_flour，配合 DoughMeta 实现自动注入。
-DoughMeta 在用户定义 Dough 子类时，自动从 muffin_flour/muffin_water
-注入已注册的名称到模块命名空间。
+将框架装饰器、基类、核心 API 注入 builtins，
+用户代码无需显式 import 即可使用。
 """
 
+import builtins
 import logging
 
 from pancake.ovenware import InitAction
@@ -16,7 +16,7 @@ class Main(InitAction):
     """Embed 插件入口
 
     init_order=-10 确保最先加载，
-    在用户代码加载前完成装饰器注册。
+    在用户代码加载前完成 builtins 注入。
     """
 
     init_order = -10
@@ -26,16 +26,23 @@ class Main(InitAction):
         return True
 
     def build(self):
-        """确保所有装饰器已注册到 muffin_flour"""
-        # 触发 decorators 模块加载（会自动注册到 muffin_flour）
-        import pancake.decorators  # noqa: F401
-        # 触发 base 模块加载（会自动注册到 muffin_water）
-        import pancake.base  # noqa: F401
-        # 触发 factory 模块加载（会自动注册到 muffin_water）
-        import pancake.factory  # noqa: F401
-
+        """将框架 API 注入 builtins"""
         from pancake.oven.muffin import muffin_flour, muffin_water
-        logger.info(
-            f"Embed: 已注册 {len(muffin_flour)} 个装饰器, "
-            f"{len(muffin_water)} 个类"
-        )
+
+        # 触发模块加载，确保注册表填充
+        import pancake.decorators  # noqa: F401
+        import pancake.base  # noqa: F401
+        import pancake.factory  # noqa: F401
+        import pancake.registry  # noqa: F401
+
+        count = 0
+        for name, obj in muffin_flour.items():
+            if name not in builtins.__dict__:
+                builtins.__dict__[name] = obj
+                count += 1
+        for name, obj in muffin_water.items():
+            if name not in builtins.__dict__:
+                builtins.__dict__[name] = obj
+                count += 1
+
+        logger.info(f"Embed: 已注入 {count} 个名称到 builtins")

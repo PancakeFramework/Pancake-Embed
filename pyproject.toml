@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pancake-embed"
-version = "0.1.0"
+version = "0.1.1"
 description = "Pancake Embed Plugin - 零 import 机制，通过 Dough 生命周期自动注入 builtins"
 authors = ["drayee <1473443474@qq.com>"]
 license = "MIT"
